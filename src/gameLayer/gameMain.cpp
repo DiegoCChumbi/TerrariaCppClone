@@ -7,10 +7,13 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <rlImGui.h>
+#include <string>
 
 struct GameData {
   GameMap gameMap;
   Camera2D camera;
+  int selectedBlock;
+  std::string selectedBlockName;
 } gameData;
 
 AssetManager assetManager;
@@ -29,11 +32,13 @@ bool initGame() {
   gameData.camera.rotation = 0.0f;
   gameData.camera.zoom = 100.0f;
 
+  gameData.selectedBlock = 1;
+  gameData.selectedBlockName = "Dirt";
+
   return true;
 }
 
 bool updateGame() {
-
   // DrawText("Bien hecho, primera ventana usando raylib.", 190, 200, 20, RED);
   // DrawRectangle(75, 75, 100, 100, {0, 255, 0, 127});
   // DrawRectangle(50, 50, 100, 100, {255, 0, 0, 127});
@@ -57,6 +62,24 @@ bool updateGame() {
   if (IsKeyDown(KEY_DOWN))
     gameData.camera.target.y += 7.f * deltaTime;
 
+  // update blok selector
+  if (IsKeyDown(KEY_ONE)) {
+    gameData.selectedBlockName = "Dirt";
+    gameData.selectedBlock = 1;
+  } else if (IsKeyDown(KEY_TWO)) {
+    gameData.selectedBlockName = "Grass Block";
+    gameData.selectedBlock = 2;
+  } else if (IsKeyDown(KEY_THREE)) {
+    gameData.selectedBlockName = "Stone";
+    gameData.selectedBlock = 3;
+  } else if (IsKeyDown(KEY_FOUR)) {
+    gameData.selectedBlock = 11;
+    gameData.selectedBlockName = "WoodLog";
+  } else if (IsKeyDown(KEY_FIVE)) {
+    gameData.selectedBlockName = "Leaf";
+    gameData.selectedBlock = 12;
+  }
+
   // Mouser position
   Vector2 worldPos = GetScreenToWorld2D(GetMousePosition(), gameData.camera);
   int blockX = (int)floor(worldPos.x);
@@ -71,7 +94,7 @@ bool updateGame() {
   if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
     auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
     if (b)
-      b->type = Block::gold;
+      b->type = gameData.selectedBlock;
   }
   // rlImGuiBegin();
   //
@@ -87,8 +110,22 @@ bool updateGame() {
 
   BeginMode2D(gameData.camera);
 
-  for (int y = 0; y < gameData.gameMap.h; y++) {
-    for (int x = 0; x < gameData.gameMap.w; x++) {
+  Vector2 topLeftView = GetScreenToWorld2D({0, 0}, gameData.camera);
+  Vector2 bottonRightView = GetScreenToWorld2D(
+      {(float)GetScreenWidth(), (float)GetScreenHeight()}, gameData.camera);
+
+  int startXView = (int)floorf(topLeftView.x - 1);
+  int endXView = (int)ceilf(bottonRightView.x + 1);
+  int startYView = (int)floorf(topLeftView.y - 1);
+  int endYView = (int)ceilf(bottonRightView.y + 1);
+
+  startXView = Clamp(startXView, 0, gameData.gameMap.w - 1);
+  endXView = Clamp(endXView, 0, gameData.gameMap.w - 1);
+  startYView = Clamp(startYView, 0, gameData.gameMap.h - 1);
+  endYView = Clamp(endYView, 0, gameData.gameMap.h - 1);
+
+  for (int y = startYView; y < endYView; y++) {
+    for (int x = startXView; x < endXView; x++) {
       auto &b = gameData.gameMap.getBlockUnsafe(x, y);
 
       if (b.type != Block::air) {
@@ -105,6 +142,9 @@ bool updateGame() {
       {0, 0, (float)assetManager.frame.width, (float)assetManager.frame.height},
       {(float)blockX, (float)blockY, 1, 1}, {0, 0}, 0.0f, WHITE);
   EndMode2D();
+
+  // print selected block information
+  DrawText(gameData.selectedBlockName.c_str(), 5, 5, 20, BLACK);
   return true;
 }
 
