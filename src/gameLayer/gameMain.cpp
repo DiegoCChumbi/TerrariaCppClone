@@ -3,7 +3,10 @@
 #include "helpers.h"
 #include <cassert>
 #include <gameMap.h>
+#include <imgui.h>
 #include <raylib.h>
+#include <raymath.h>
+#include <rlImGui.h>
 
 struct GameData {
   GameMap gameMap;
@@ -54,6 +57,34 @@ bool updateGame() {
   if (IsKeyDown(KEY_DOWN))
     gameData.camera.target.y += 7.f * deltaTime;
 
+  // Mouser position
+  Vector2 worldPos = GetScreenToWorld2D(GetMousePosition(), gameData.camera);
+  int blockX = (int)floor(worldPos.x);
+  int blockY = (int)floor(worldPos.y);
+
+  if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+    auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
+    if (b)
+      *b = {};
+  }
+
+  if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+    auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
+    if (b)
+      b->type = Block::gold;
+  }
+  // rlImGuiBegin();
+  //
+  // ImGui::Begin("Test");
+  // ImGui::Text("Hola");
+  // // ImGui::Text((char *)blockX);
+  // // ImGui::Text((char *)blockY);
+  // ImGui::End();
+  //
+  // ImGui::ShowDemoWindow();
+  //
+  // rlImGuiEnd();
+
   BeginMode2D(gameData.camera);
 
   for (int y = 0; y < gameData.gameMap.h; y++) {
@@ -69,6 +100,10 @@ bool updateGame() {
     }
   }
 
+  DrawTexturePro(
+      assetManager.frame,
+      {0, 0, (float)assetManager.frame.width, (float)assetManager.frame.height},
+      {(float)blockX, (float)blockY, 1, 1}, {0, 0}, 0.0f, WHITE);
   EndMode2D();
   return true;
 }
