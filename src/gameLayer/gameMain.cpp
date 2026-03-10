@@ -1,5 +1,6 @@
 #include "assetManager.h"
 #include "gameMake.h"
+#include "helpers.h"
 #include <cassert>
 #include <gameMap.h>
 #include <raylib.h>
@@ -16,14 +17,14 @@ bool initGame() {
   gameData.gameMap.create(30, 20);
 
   gameData.gameMap.getBlockUnsafe(0, 0).type = Block::dirt;
-  gameData.gameMap.getBlockUnsafe(1, 1).type = Block::dirt;
-  gameData.gameMap.getBlockUnsafe(2, 2).type = Block::dirt;
-  gameData.gameMap.getBlockUnsafe(3, 3).type = Block::dirt;
+  gameData.gameMap.getBlockUnsafe(1, 1).type = Block::bookShelf;
+  gameData.gameMap.getBlockUnsafe(2, 2).type = Block::sandChest;
+  gameData.gameMap.getBlockUnsafe(3, 3).type = Block::rubyBlock;
   gameData.gameMap.getBlockUnsafe(4, 4).type = Block::dirt;
 
   gameData.camera.target = {0, 0};
   gameData.camera.rotation = 0.0f;
-  gameData.camera.zoom = 1.0f;
+  gameData.camera.zoom = 100.0f;
 
   return true;
 }
@@ -45,13 +46,13 @@ bool updateGame() {
 
   // Camera movement
   if (IsKeyDown(KEY_LEFT))
-    gameData.camera.target.x -= 300.f * deltaTime;
+    gameData.camera.target.x -= 7.f * deltaTime;
   if (IsKeyDown(KEY_RIGHT))
-    gameData.camera.target.x += 300.f * deltaTime;
+    gameData.camera.target.x += 7.f * deltaTime;
   if (IsKeyDown(KEY_UP))
-    gameData.camera.target.y -= 300.f * deltaTime;
+    gameData.camera.target.y -= 7.f * deltaTime;
   if (IsKeyDown(KEY_DOWN))
-    gameData.camera.target.y += 300.f * deltaTime;
+    gameData.camera.target.y += 7.f * deltaTime;
 
   BeginMode2D(gameData.camera);
 
@@ -60,14 +61,10 @@ bool updateGame() {
       auto &b = gameData.gameMap.getBlockUnsafe(x, y);
 
       if (b.type != Block::air) {
-        float size = 32;
-        float posX = x * size;
-        float posY = y * size;
 
-        DrawTexturePro(assetManager.dirt,
-                       Rectangle{0.f, 0.f, (float)assetManager.dirt.width,
-                                 (float)assetManager.dirt.height},
-                       {posX, posY, size, size}, {0, 0}, 0.0f, WHITE);
+        DrawTexturePro(assetManager.textures,
+                       getTextureAtlas(b.type, 0, 32, 32),
+                       {(float)x, (float)y, 1, 1}, {0, 0}, 0.0f, WHITE);
       }
     }
   }
