@@ -32,18 +32,18 @@ int main() {
     if (!updateGame()) {
       closeGame();
     }
-    rlImGuiBegin();
-
-    ImGui::Begin("Test");
-    ImGui::Text("Hola");
-    if (ImGui::Button("Boton")) {
-      std::cout << "Boton presionado" << std::endl;
-    }
-    ImGui::End();
-
-    ImGui::ShowDemoWindow();
-
-    rlImGuiEnd();
+    // rlImGuiBegin();
+    //
+    // ImGui::Begin("Test");
+    // ImGui::Text("Hola");
+    // if (ImGui::Button("Boton")) {
+    //   std::cout << "Boton presionado" << std::endl;
+    // }
+    // ImGui::End();
+    //
+    // ImGui::ShowDemoWindow();
+    //
+    // rlImGuiEnd();
 
     EndDrawing();
   }

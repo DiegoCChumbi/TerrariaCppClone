@@ -3,7 +3,9 @@
 #include "helpers.h"
 #include <cassert>
 #include <gameMap.h>
+#include <gameWall.h>
 #include <imgui.h>
+#include <iostream>
 #include <raylib.h>
 #include <raymath.h>
 #include <rlImGui.h>
@@ -11,9 +13,11 @@
 
 struct GameData {
   GameMap gameMap;
+  GameWall gameWall;
   Camera2D camera;
   int selectedBlock;
   std::string selectedBlockName;
+  bool isBlock;
 } gameData;
 
 AssetManager assetManager;
@@ -21,6 +25,7 @@ AssetManager assetManager;
 bool initGame() {
   assetManager.loadAll();
   gameData.gameMap.create(30, 20);
+  gameData.gameWall.create(30, 20);
 
   gameData.gameMap.getBlockUnsafe(0, 0).type = Block::dirt;
   gameData.gameMap.getBlockUnsafe(1, 1).type = Block::bookShelf;
@@ -34,6 +39,7 @@ bool initGame() {
 
   gameData.selectedBlock = 1;
   gameData.selectedBlockName = "Dirt";
+  gameData.isBlock = true;
 
   return true;
 }
@@ -66,18 +72,39 @@ bool updateGame() {
   if (IsKeyDown(KEY_ONE)) {
     gameData.selectedBlockName = "Dirt";
     gameData.selectedBlock = 1;
+    gameData.isBlock = true;
   } else if (IsKeyDown(KEY_TWO)) {
     gameData.selectedBlockName = "Grass Block";
     gameData.selectedBlock = 2;
+    gameData.isBlock = true;
   } else if (IsKeyDown(KEY_THREE)) {
     gameData.selectedBlockName = "Stone";
     gameData.selectedBlock = 3;
+    gameData.isBlock = true;
   } else if (IsKeyDown(KEY_FOUR)) {
     gameData.selectedBlock = 11;
     gameData.selectedBlockName = "WoodLog";
+    gameData.isBlock = true;
   } else if (IsKeyDown(KEY_FIVE)) {
     gameData.selectedBlockName = "Leaf";
     gameData.selectedBlock = 12;
+    gameData.isBlock = true;
+  } else if (IsKeyDown(KEY_SIX)) {
+    gameData.selectedBlockName = "Wall 1";
+    gameData.selectedBlock = 54;
+    gameData.isBlock = false;
+  } else if (IsKeyDown(KEY_SEVEN)) {
+    gameData.selectedBlockName = "Wall 2";
+    gameData.selectedBlock = 55;
+    gameData.isBlock = false;
+  } else if (IsKeyDown(KEY_EIGHT)) {
+    gameData.selectedBlockName = "Wall 3";
+    gameData.selectedBlock = 56;
+    gameData.isBlock = false;
+  } else if (IsKeyDown(KEY_NINE)) {
+    gameData.selectedBlockName = "Wall 4";
+    gameData.selectedBlock = 57;
+    gameData.isBlock = false;
   }
 
   // Mouser position
@@ -87,14 +114,24 @@ bool updateGame() {
 
   if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
     auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
-    if (b)
+    if (b->type)
       *b = {};
+    else {
+      auto w = gameData.gameWall.getWallSafe(blockX, blockY);
+      *w = {};
+    }
   }
 
   if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
-    auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
-    if (b)
-      b->type = gameData.selectedBlock;
+    if (gameData.isBlock) {
+      auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
+      if (b)
+        b->type = gameData.selectedBlock;
+    } else {
+      auto w = gameData.gameWall.getWallSafe(blockX, blockY);
+      if (w)
+        w->type = gameData.selectedBlock;
+    }
   }
   // rlImGuiBegin();
   //
@@ -127,12 +164,42 @@ bool updateGame() {
   for (int y = startYView; y < endYView; y++) {
     for (int x = startXView; x < endXView; x++) {
       auto &b = gameData.gameMap.getBlockUnsafe(x, y);
+      auto &w = gameData.gameWall.getWallUnsafe(x, y);
 
+      // first render the wall
+
+      DrawTexturePro(assetManager.walls, getTextureAtlas(w.type, 0, 32, 32),
+                     {(float)x, (float)y, 1, 1}, {0, 0}, 0.0f, WHITE);
+
+      // second render the blocks
       if (b.type != Block::air) {
 
-        DrawTexturePro(assetManager.textures,
-                       getTextureAtlas(b.type, 0, 32, 32),
-                       {(float)x, (float)y, 1, 1}, {0, 0}, 0.0f, WHITE);
+        if (b.type == Block::woodLog) {
+          auto &top = gameData.gameMap.getBlockUnsafe(x, y - 1);
+          auto &down = gameData.gameMap.getBlockUnsafe(x, y + 1);
+          if (top.type == Block::air && down.type == Block::grassBlock) {
+            DrawTexturePro(assetManager.tree, getTextureAtlas(7, 0, 32, 32),
+                           {(float)x, (float)y, 1, 1}, {0, 0}, 0.0f, WHITE);
+          } else if (top.type == Block::leaves) {
+            DrawTexturePro(assetManager.tree, getTextureAtlas(5, 0, 32, 32),
+                           {(float)x, (float)y, 1, 1}, {0, 0}, 0.0f, WHITE);
+          } else if (top.type == Block::woodLog &&
+                     down.type == Block::grassBlock) {
+
+            DrawTexturePro(assetManager.tree, getTextureAtlas(4, 0, 32, 32),
+                           {(float)x, (float)y, 1, 1}, {0, 0}, 0.0f, WHITE);
+          } else {
+
+            DrawTexturePro(assetManager.textures,
+                           getTextureAtlas(b.type, 0, 32, 32),
+                           {(float)x, (float)y, 1, 1}, {0, 0}, 0.0f, WHITE);
+          }
+        } else {
+
+          DrawTexturePro(assetManager.textures,
+                         getTextureAtlas(b.type, 0, 32, 32),
+                         {(float)x, (float)y, 1, 1}, {0, 0}, 0.0f, WHITE);
+        }
       }
     }
   }
@@ -145,6 +212,7 @@ bool updateGame() {
 
   // print selected block information
   DrawText(gameData.selectedBlockName.c_str(), 5, 5, 20, BLACK);
+
   return true;
 }
 
