@@ -59,4 +59,5 @@ struct Wall {
     BLOCK_COUNT,
   };
   std::uint16_t type = 0;
+  std::uint16_t variant = 0;
 };

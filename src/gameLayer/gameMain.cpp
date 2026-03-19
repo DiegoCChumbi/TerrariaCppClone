@@ -136,8 +136,10 @@ bool updateGame() {
       }
     } else {
       auto w = gameData.gameWall.getWallSafe(blockX, blockY);
-      if (w)
+      if (w) {
         w->type = gameData.selectedBlock;
+        w->variant = getRandomInt(gameData.rng, 0, 3);
+      }
     }
   }
   // rlImGuiBegin();
@@ -175,7 +177,8 @@ bool updateGame() {
 
       // first render the wall
 
-      DrawTexturePro(assetManager.walls, getTextureAtlas(w.type, 0, 32, 32),
+      DrawTexturePro(assetManager.walls,
+                     getTextureAtlas(w.type, w.variant, 32, 32),
                      {(float)x, (float)y, 1, 1}, {0, 0}, 0.0f, WHITE);
 
       // second render the blocks
