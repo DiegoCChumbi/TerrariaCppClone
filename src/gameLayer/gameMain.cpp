@@ -1,6 +1,7 @@
 #include "assetManager.h"
 #include "gameMake.h"
 #include "helpers.h"
+#include "randomStuff.h"
 #include <cassert>
 #include <gameMap.h>
 #include <gameWall.h>
@@ -18,6 +19,7 @@ struct GameData {
   int selectedBlock;
   std::string selectedBlockName;
   bool isBlock;
+  std::ranlux24_base rng;
 } gameData;
 
 AssetManager assetManager;
@@ -40,6 +42,7 @@ bool initGame() {
   gameData.selectedBlock = 1;
   gameData.selectedBlockName = "Dirt";
   gameData.isBlock = true;
+  gameData.rng.seed(123456789);
 
   return true;
 }
@@ -112,6 +115,7 @@ bool updateGame() {
   int blockX = (int)floor(worldPos.x);
   int blockY = (int)floor(worldPos.y);
 
+  // delete block
   if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
     auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
     if (b->type)
@@ -122,11 +126,14 @@ bool updateGame() {
     }
   }
 
+  // create block
   if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
     if (gameData.isBlock) {
       auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
-      if (b)
+      if (b) {
         b->type = gameData.selectedBlock;
+        b->variant = getRandomInt(gameData.rng, 0, 3);
+      }
     } else {
       auto w = gameData.gameWall.getWallSafe(blockX, blockY);
       if (w)
@@ -178,26 +185,29 @@ bool updateGame() {
           auto &top = gameData.gameMap.getBlockUnsafe(x, y - 1);
           auto &down = gameData.gameMap.getBlockUnsafe(x, y + 1);
           if (top.type == Block::air && down.type == Block::grassBlock) {
-            DrawTexturePro(assetManager.tree, getTextureAtlas(7, 0, 32, 32),
+            DrawTexturePro(assetManager.tree,
+                           getTextureAtlas(7, b.variant, 32, 32),
                            {(float)x, (float)y, 1, 1}, {0, 0}, 0.0f, WHITE);
           } else if (top.type == Block::leaves) {
-            DrawTexturePro(assetManager.tree, getTextureAtlas(5, 0, 32, 32),
+            DrawTexturePro(assetManager.tree,
+                           getTextureAtlas(5, b.variant, 32, 32),
                            {(float)x, (float)y, 1, 1}, {0, 0}, 0.0f, WHITE);
           } else if (top.type == Block::woodLog &&
                      down.type == Block::grassBlock) {
 
-            DrawTexturePro(assetManager.tree, getTextureAtlas(4, 0, 32, 32),
+            DrawTexturePro(assetManager.tree,
+                           getTextureAtlas(4, b.variant, 32, 32),
                            {(float)x, (float)y, 1, 1}, {0, 0}, 0.0f, WHITE);
           } else {
 
             DrawTexturePro(assetManager.textures,
-                           getTextureAtlas(b.type, 0, 32, 32),
+                           getTextureAtlas(b.type, b.variant, 32, 32),
                            {(float)x, (float)y, 1, 1}, {0, 0}, 0.0f, WHITE);
           }
         } else {
 
           DrawTexturePro(assetManager.textures,
-                         getTextureAtlas(b.type, 0, 32, 32),
+                         getTextureAtlas(b.type, b.variant, 32, 32),
                          {(float)x, (float)y, 1, 1}, {0, 0}, 0.0f, WHITE);
         }
       }
